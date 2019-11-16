@@ -382,7 +382,7 @@ void dijstra_plan(const std::string txt_path)
 int main(int argc, char const *argv[])
 {
 
-    dijstra_plan("/home/ln/WorkSpace/map1.txt");
+    dijstra_plan("/home/ln/WorkSpace/pathplanning/map_generator/map1.txt");
 
     return 0;
 }
