@@ -17,7 +17,7 @@ void I_ARAStar::GetGraphFromTXT(const char *name)
     map_size = n * m;
     start = 0;
     goal = n * m - 1;
-    
+
     for (int i = 0; i < n; ++i)
     {
         for (int j = 0; j < m; ++j)
@@ -39,57 +39,6 @@ void I_ARAStar::GetGraphFromTXT(const char *name)
             }
         }
     }
-}
-
-void I_ARAStar::StartIAra()
-{
-    last_start = -1;
-    // 用无穷大填充v值g值
-    v.resize(map_size, INF);
-    g.resize(map_size, INF);
-    parents.resize(map_size, -1);
-    // 运行算法
-    g[start] = 0;
-    OPEN.insert(SetElem(start, GetFvalue(start)));
-    while (start != goal)
-    {
-
-        time_cur = clock();
-        logging << start << ' ' << goal << std::endl;
-
-        if (ComputePath() == false)
-            return;
-
-        //获取找到的路径
-        GetCurentPath();
-        paths << '\n';
-
-        last_start = start;
-        start = *(path.rbegin() + 1); //取计算出的path中倒数第二个节点
-        old_goal = goal;
-        goal = GetNextGoal(goal); //获取变化后的目标点
-        if (start == goal)
-        {
-            break;
-        }
-        UpdateFvalues(OPEN);
-        Step1();
-        Step2();
-        Step3();
-        Step4();
-        for (auto i : OPEN)
-        {
-            opens << i.id << ' ';
-        }
-        opens << std::endl;
-
-        times.push_back(clock() - time_cur);
-    }
-    opens << std::endl;
-    logging << start << ' ' << goal << std::endl;
-    closes << std::endl;
-    std::cout << "Number of search:" << times.size() << std::endl;
-    std::cout << "Spend time:" << (double)sum(times) / CLOCKS_PER_SEC << std::endl;
 }
 
 void I_ARAStar::OpenLogTXT(const char *logfile)
@@ -297,6 +246,7 @@ void I_ARAStar::GetCurentPath()
     path.clear();
     int current = goal;
     paths << current << ' ';
+
     while (current != start)
     {
         current = parents[current];
@@ -313,7 +263,7 @@ char I_ARAStar::GetSell(int ind)
 
 inline int I_ARAStar::GetNextGoal(int goal)
 {
-    static std::set<int> visited;
+    // static std::set<int> visited;
     visited.insert(goal);
 
     if (goal - 1 > 0 and goal - 1 < map_size and (goal % m != 0) and
@@ -345,6 +295,62 @@ int I_ARAStar::sum(std::vector<int> &v)
         summ += i;
     }
     return summ;
+}
+
+void I_ARAStar::StartIAra()
+{
+    last_start = -1;
+    // 用无穷大填充v值g值
+    v.resize(map_size, INF);
+    g.resize(map_size, INF);
+    parents.resize(map_size, -1);
+    // 运行算法
+    g[start] = 0;
+    OPEN.insert(SetElem(start, GetFvalue(start)));
+    while (start != goal)
+    {
+        time_cur = clock();
+        logging << start << ' ' << goal << std::endl;
+
+        if (ComputePath() == false)
+        {
+            std::cout << "Get target!" << std::endl;
+            break;
+        }
+
+        //获取找到的路径
+        GetCurentPath();
+        paths << std::endl;
+        std::cout << "Find path[start:(" << start % m << "," << start / m << "), goal:("
+                  << goal % m << "," << goal / m << ")]" << std::endl;
+        last_start = start;
+        start = *(path.rbegin() + 1); //取计算出的path中倒数第二个节点
+        old_goal = goal;
+        goal = GetNextGoal(goal); //获取变化后的目标点
+        if (start == goal)
+        {
+            std::cout << "Get target!" << std::endl;
+            break;
+        }
+        UpdateFvalues(OPEN);
+        Step1();
+        Step2();
+        Step3();
+        Step4();
+        for (auto i : OPEN)
+        {
+            opens << i.id << ' ';
+        }
+        opens << std::endl;
+
+        times.push_back(clock() - time_cur);
+    }
+    opens << std::endl;
+    logging << start << ' ' << goal << std::endl;
+    closes << std::endl;
+    paths << std::endl;
+    std::cout << "Number of search:" << times.size() << std::endl;
+    std::cout << "Spend time:" << (double)sum(times) / CLOCKS_PER_SEC << std::endl;
 }
 
 int main(int argc, char const *argv[])
