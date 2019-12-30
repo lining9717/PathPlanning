@@ -408,6 +408,7 @@ private:
     float getMaxFromVector(std::vector<float> &v)
     {
         float max_v = v[0];
+
         for (auto i = 0; i < v.size(); i++)
         {
             if (max_v < v[i])
@@ -426,7 +427,7 @@ private:
 
 int main(int argc, char const *argv[])
 {
-    std::string txt_path = "/home/ln/WorkSpace/pathplanning/map_generator/map1.txt";
+    std::string txt_path = "/home/ln/WorkSpace/c++/pathplanning/map_generator/map1.txt";
     float sx = 2.0;
     float sy = 2.0;
     float gx = 50.0;

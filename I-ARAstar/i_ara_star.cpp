@@ -350,7 +350,7 @@ void I_ARAStar::StartIAra()
     closes << std::endl;
     paths << std::endl;
     std::cout << "Number of search:" << times.size() << std::endl;
-    std::cout << "Spend time:" << (double)sum(times) / CLOCKS_PER_SEC << std::endl;
+    std::cout << "Spend time:" << (double)sum(times) / 1000 << "ms" << std::endl;
 }
 
 int main(int argc, char const *argv[])
