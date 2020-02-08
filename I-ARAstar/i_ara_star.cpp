@@ -27,7 +27,7 @@ void I_ARAStar::GetGraphFromTXT(const char *name)
             for (auto it : neigh)
             {
                 i_new = i + it.first;
-                j_new = j + it.second;
+                j_new = j + it.second; 
                 if (i_new > -1 and i_new < n and j_new > -1 and j_new < m)
                 {
                     if (lab[i_new][j_new] == '.')
