@@ -8,9 +8,7 @@ private:
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> p;
 
 public:
-    PriorityQueue()
-    {
-    }
+    PriorityQueue() {}
     bool empty()
     {
         return p.size() == 0;
@@ -20,7 +18,7 @@ public:
         return p.size();
     }
 
-    void put(Node n, Key priority)
+    void put(Node &n, Key &priority)
     {
         n.priority = priority;
         p.push(n);
@@ -46,18 +44,21 @@ public:
     void deleteNode(Node &n)
     {
         std::vector<Node> v;
+        // std::cout << "         delete all nodes" << std::endl;
         while (!p.empty())
         {
             Node nn = p.top();
-            if (nn.x == n.x and nn.y == n.y)
-                continue;
-            v.push_back(nn);
+            if (!(nn.x == n.x and nn.y == n.y))
+                v.push_back(nn);
             p.pop();
         }
+        // std::cout << "         delete completed" << std::endl;
+
         for (Node i : v)
-        {
             p.push(i);
-        }
+        v.clear();
+        v.shrink_to_fit();
+        
     }
 };
 #endif

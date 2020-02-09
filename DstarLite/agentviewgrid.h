@@ -7,10 +7,13 @@ class AgentViewGrid : public SquareGrid
 {
 public:
     AgentViewGrid() {}
-    AgentViewGrid(int w, int h) : SquareGrid(width, height) {}
-    std::vector<Node> new_walls(std::vector<std::pair<Node, char>> &observation)
+    AgentViewGrid(int w, int h) : SquareGrid(width, height)
     {
-        std::vector<Node> results;
+        width = w;
+        height = h;
+    }
+    void new_walls(std::vector<std::pair<Node, char>> &observation, std::vector<Node> &results)
+    {
         for (std::vector<std::pair<Node, char>>::iterator iter = observation.begin(); iter != observation.end(); ++iter)
         {
             Node n = iter->first;
@@ -19,7 +22,6 @@ public:
                 results.push_back(n);
             }
         }
-        return results;
     }
 
     void update_walls(std::vector<Node> &new_walls)

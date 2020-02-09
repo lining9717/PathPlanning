@@ -1,10 +1,10 @@
 #include "dstarlite.h"
 
-void DStarLite::init(const char *map, int v_range)
+bool DStarLite::init(const char *map, int v_range)
 {
     std::ifstream myfile(map);
     std::string input;
-
+    std::vector<std::string> lab;
     int width = 0, height = 0;
     km = 0;
     while (getline(myfile, input))
@@ -21,18 +21,27 @@ void DStarLite::init(const char *map, int v_range)
         {
             if (lab[i][j] == WALL)
                 real_grid.walls.insert(m_p(j, i));
-            if (lab[i][j] == 'A')
+            if (lab[i][j] == START)
+            {
                 position = Node(j, i);
-            if (lab[i][j] == 'Z')
+                start = Node(j, i);
+            }
+            if (lab[i][j] == GOAL)
                 goal = Node(j, i);
         }
     }
-    // std::cout << real_grid.walls.size() << std::endl;
-    real_grid.print_walls();
+    if (start.x == -1 and start.y == -1 or goal.x == -1 and goal.y == -1)
+    {
+        std::cout << "!!!!NO START(A) AND GOAL(Z) IN MAP!!!" << std::endl
+                  << "Must use symbol A to represent Start point and use symbol Z to represent Goal point" << std::endl;
+        return false;
+    }
     view_range = v_range;
+    Key goal_key = calculate_key(goal);
     frontier = PriorityQueue();
-    frontier.put(goal, calculate_key(goal));
+    frontier.put(goal, goal_key);
     back_pointer.push_back(m_p(goal, Node(-1, -1)));
+    return true;
 }
 
 int DStarLite::heuristic(Node &a, Node &b)
@@ -59,14 +68,14 @@ int DStarLite::rhs(Node &n)
     if (n.x == goal.x and n.y == goal.y)
         return 0;
 
-    if (RHS_VALS.count(m_p(n.x, n.y)) == 0)
+    if (RHS_VALS.size() == 0 or RHS_VALS.count(m_p(n.x, n.y)) == 0)
         return INFI;
     return RHS_VALS[m_p(n.x, n.y)];
 }
 
 int DStarLite::g(Node &n)
 {
-    if (G_VALS.count(m_p(n.x, n.y)) == 0)
+    if (G_VALS.size() == 0 or G_VALS.count(m_p(n.x, n.y)) == 0)
         return INFI;
     return G_VALS[m_p(n.x, n.y)];
 }
@@ -79,12 +88,16 @@ int DStarLite::different_nodes_number(std::deque<Node> &nodes)
         v.push_back(m_p(it1->x, it1->y));
     std::set<std::pair<int, int>> st(v.begin(), v.end());
     v.assign(st.begin(), st.end());
-    return v.size();
+    int size = v.size();
+    v.clear();
+    v.shrink_to_fit();
+    return size;
 }
 
 Node DStarLite::lowest_cost_neighbour(Node &n)
 {
-    std::vector<Node> neighbours = grid.neighbors(n);
+    std::vector<Node> neighbours;
+    grid.neighbors(n, neighbours);
     Node lowerest_neighbour = neighbours[0];
     int min_cost = INFI;
     for (Node neighbour : neighbours)
@@ -96,12 +109,15 @@ Node DStarLite::lowest_cost_neighbour(Node &n)
             lowerest_neighbour = neighbour;
         }
     }
+    neighbours.clear();
+    neighbours.shrink_to_fit();
     return lowerest_neighbour;
 }
 
 int DStarLite::calculate_rhs(Node &n)
 {
-    std::vector<Node> neighbours = grid.neighbors(n);
+    std::vector<Node> neighbours;
+    grid.neighbors(n, neighbours);
     Node lowerest_neighbour = neighbours[0];
     int min_cost = INFI;
     for (Node neighbour : neighbours)
@@ -114,6 +130,8 @@ int DStarLite::calculate_rhs(Node &n)
         }
     }
     back_pointer.push_back(m_p(n, lowerest_neighbour));
+    neighbours.clear();
+    neighbours.shrink_to_fit();
     return min_cost;
 }
 
@@ -124,122 +142,149 @@ void DStarLite::update_node(Node &n)
     frontier.deleteNode(n);
     if (g(n) != rhs(n))
     {
-        frontier.put(n, calculate_key(n));
+        Key k = calculate_key(n);
+        frontier.put(n, k);
     }
 }
 
 void DStarLite::update_nodes(std::vector<Node> &nodes)
 {
-    if (nodes.size() == 0)
+    int size = nodes.size();
+    if (size == 0)
         return;
-    for (Node n : nodes)
-    {
-        update_node(n);
-    }
+    for (int i = 0; i < size; i++)
+        update_node(nodes[i]);
 }
 
-void DStarLite::draw_map(std::vector<Node> &path)
+void DStarLite::draw_map(SquareGrid graph, std::vector<Node> &path)
 {
     bool isWrited = false;
-    for (int i = 0; i < real_grid.height; ++i)
+    for (int i = 0; i < graph.height; ++i)
     {
-        for (int j = 0; j < real_grid.width; ++j)
+        for (int j = 0; j < graph.width; ++j)
         {
             for (Node n : path)
             {
-                if (n.x == j and n.y == i and !isWrited)
+                if (n.x == j and n.y == i and !isWrited and
+                    !(j == start.x and i == start.y) and !(j == goal.x and i == goal.y))
                 {
-                    std::cout << " @ ";
+                    std::cout << " " << PATH << " ";
                     isWrited = true;
                 }
             }
             if (!isWrited)
             {
-                if (lab[i][j] == WALL)
-                    std::cout << "###";
+                if (graph.walls.count(m_p(j, i)))
+                    std::cout << WALL << WALL << WALL;
+                else if (j == start.x and i == start.y)
+                    std::cout << " " << START << " ";
+                else if (j == goal.x and i == goal.y)
+                    std::cout << " " << GOAL << " ";
                 else
-                    std::cout << " " << lab[i][j] << " ";
+                    std::cout << " " << PASSABLE << " ";
             }
             isWrited = false;
         }
         std::cout << std::endl;
     }
 }
-void DStarLite::draw_map()
+
+void DStarLite::draw_map(SquareGrid graph)
 {
-    for (int i = 0; i < real_grid.height; ++i)
+    for (int i = 0; i < graph.height; ++i)
     {
-        for (int j = 0; j < real_grid.width; ++j)
+        for (int j = 0; j < graph.width; ++j)
         {
-            if (lab[i][j] == WALL)
-                std::cout << "###";
+            if (graph.walls.count(m_p(j, i)))
+                std::cout << WALL << WALL << WALL;
+            else if (j == start.x and i == start.y)
+                std::cout << " " << START << " ";
+            else if (j == goal.x and i == goal.y)
+                std::cout << " " << GOAL << " ";
             else
-                std::cout << " " << lab[i][j] << " ";
+                std::cout << " " << PASSABLE << " ";
         }
         std::cout << std::endl;
     }
 }
 
-void DStarLite::compute_shortest_path()
+int DStarLite::compute_shortest_path()
 {
     std::deque<Node> last_nodes;
-    std::cout << "frontier size:" << frontier.size() << std::endl;
-    std::cout << "frontier.first_key:(" << frontier.first_key().first << "," << frontier.first_key().second << ")" << std::endl;
+    std::vector<Node> neighs;
     while (is_key1_lowerthan_key2(frontier.first_key(), calculate_key(position)) or g(position) != rhs(position))
     {
         Key k_old = frontier.first_key();
         Node node = frontier.pop();
         last_nodes.push_back(node);
         if (last_nodes.size() == 10 and different_nodes_number(last_nodes) < 3)
+        {
             std::cout << "[FAIL]:Stuck in a loop!" << std::endl;
+            return NO_PATH;
+        }
+
         Key k_new = calculate_key(node);
-        std::cout << "11111111111111111111111111111111111" << std::endl;
+
         if (is_key1_lowerthan_key2(k_old, k_new))
             frontier.put(node, k_new);
         else if (g(node) > rhs(node))
         {
             G_VALS[m_p(node.x, node.y)] = RHS_VALS[m_p(node.x, node.y)];
-            std::vector<Node> neighs = grid.neighbors(node);
+            grid.neighbors(node, neighs);
             update_nodes(neighs);
+            neighs.clear();
+            neighs.shrink_to_fit();
         }
         else
         {
             G_VALS[m_p(node.x, node.y)] = INFI;
-            std::vector<Node> neighs = grid.neighbors(node);
+            grid.neighbors(node, neighs);
             neighs.push_back(node);
             update_nodes(neighs);
+            neighs.clear();
+            neighs.shrink_to_fit();
         }
+        if (frontier.size() == 0)
+            return NO_PATH;
     }
+    return HAVE_PATH;
 }
 
-void DStarLite::move_to_goal(std::vector<Node> &path)
+int DStarLite::move_to_goal(std::vector<Node> &path)
 {
-    std::vector<std::pair<Node, char>> observation = real_grid.observe(position, view_range);
-    std::vector<std::pair<Node, char>>::iterator iter;
-    std::cout << "observation size:" << observation.size() << std::endl;
-    // for (iter = observation.begin(); iter != observation.end(); iter++)
-    // {
-    //     std::cout << "(" << iter->first.x << "," << iter->first.y << "):" << iter->second << std::endl;
-    // }
-
-    std::vector<Node> walls = grid.new_walls(observation);
+    std::cout << "The real graph (A=Start, Z=Goal):" << std::endl;
+    draw_map(real_grid);
+    std::vector<std::pair<Node, char>> observation;
+    real_grid.observe(position, view_range, observation);
+    std::vector<Node> walls;
+    grid.new_walls(observation, walls);
     grid.update_walls(walls);
-    std::cout << "grid walls size:" << grid.walls.size() << std::endl;
-    compute_shortest_path();
+    int status = compute_shortest_path();
+    if (status == NO_PATH)
+        return NO_PATH;
+
     Node last_node = position;
     path.push_back(position);
+    std::vector<Node> new_walls;
+
     while (!(position.x == goal.x and position.y == goal.y))
     {
-        std::cout << "position node:";
-        position.print_position();
+        if (IS_PRINT_CONSTRUCTING_PROCESS == 1)
+        {
+            std::cout << "******************************************************" << std::endl;
+            std::cout << "constructing graph (A=Start, Z=Goal, @=path):" << std::endl;
+            draw_map(grid, path);
+        }
         if (g(position) == INFI)
         {
             std::cout << "No Path!" << std::endl;
-            return;
+            return NO_PATH;
         }
         position = lowest_cost_neighbour(position);
-        observation = real_grid.observe(position, view_range);
-        std::vector<Node> new_walls = grid.new_walls(observation);
+        std::vector<std::pair<Node, char>>().swap(observation);
+        real_grid.observe(position, view_range, observation);
+
+        grid.new_walls(observation, new_walls);
 
         if (new_walls.size())
         {
@@ -248,26 +293,47 @@ void DStarLite::move_to_goal(std::vector<Node> &path)
             last_node = position;
             for (Node wallnode : new_walls)
             {
-                std::vector<Node> neigh_nodes = grid.neighbors(wallnode);
+                std::vector<Node> neigh_nodes;
+                grid.neighbors(wallnode, neigh_nodes);
                 for (Node node : neigh_nodes)
                     if (!grid.is_wall(node))
                         update_node(node);
             }
-            compute_shortest_path();
+            status = compute_shortest_path();
+            if (status == NO_PATH)
+                return NO_PATH;
         }
         path.push_back(position);
+        std::vector<Node>().swap(new_walls);
     }
+    std::cout << "******************************************************" << std::endl;
+    std::cout << "Final Path, taken (@ symbols):" << std::endl;
+    draw_map(real_grid, path);
+    return HAVE_PATH;
 }
 
 int main(int argc, char const *argv[])
 {
     DStarLite dsl;
-    dsl.init("/home/ln/WorkSpace/c++/pathplanning/DstarLite/map.txt", 2);
-    std::cout << "The graph (A=Start, Z=Goal):" << std::endl;
-    dsl.draw_map();
+    if (!dsl.init("./map1.txt", 4))
+        return 0;
+
     std::vector<Node> path;
-    dsl.move_to_goal(path);
-    std::cout << "Path taken (@ symbols):" << std::endl;
-    dsl.draw_map(path);
+    int status = dsl.move_to_goal(path);
+    if (status == HAVE_PATH)
+    {
+        std::cout << "Final Path:[Start=";
+        int length = path.size();
+        for (int i = 0; i < length; i++)
+        {
+            std::cout << "(" << path[i].x << "," << path[i].y << ")";
+            if (i + 1 != length)
+                std::cout << "->";
+        }
+        std::cout << "=Goal]" << std::endl;
+    }
+    else
+        std::cout << "No Path!" << std::endl;
+
     return 0;
 }

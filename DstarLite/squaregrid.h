@@ -14,9 +14,9 @@ public:
         width = w;
         height = h;
     }
-    bool in_bound(Node &n)
+    bool in_bound(int x, int y)
     {
-        return 0 <= n.x and n.x < width and 0 <= n.y and n.y < height;
+        return 0 <= x and x < width and 0 <= y and y < height;
     }
 
     bool is_wall(Node &n)
@@ -36,30 +36,31 @@ public:
         return 1;
     }
 
-    std::vector<Node> neighbors(Node &n)
+    void neighbors(Node &n, std::vector<Node> &results)
     {
-        std::vector<Node> results;
         for (auto it : neigh)
         {
-            Node nn(n.x + it.first, n.y + it.second);
-            if (in_bound(nn))
+            // std::cout << "x:" << n.x + it.first << ",y:" << n.y + it.second << std::endl;
+            if (in_bound(n.x + it.first, n.y + it.second))
+            {
+                Node nn(n.x + it.first, n.y + it.second);
                 results.push_back(nn);
+            }
         }
-        return results;
     }
 
-    std::vector<std::pair<Node, char>> observe(Node &position, int obs_range)
+    void observe(Node &position, int obs_range, std::vector<std::pair<Node, char>> &results)
     {
-        std::vector<std::pair<Node, char>> results;
         for (int x = position.x - obs_range;
              x <= position.x + obs_range; x++)
         {
             for (int y = position.y - obs_range;
                  y <= position.y + obs_range; y++)
             {
-                Node n(x, y);
-                if (in_bound(n))
+
+                if (in_bound(x, y))
                 {
+                    Node n(x, y);
                     if (is_wall(n))
                         results.push_back(std::pair<Node, char>(n, WALL));
                     else
@@ -67,7 +68,6 @@ public:
                 }
             }
         }
-        return results;
     }
     void print_walls()
     {

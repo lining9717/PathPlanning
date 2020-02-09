@@ -11,7 +11,6 @@
 #include <map>
 #include <queue>
 #include <deque>
-#include <limits>
 #include <math.h>
 #include <memory>
 
@@ -20,6 +19,11 @@
 #define INFI 1e8 + 7
 #define WALL '#'
 #define PASSABLE '.'
+#define PATH '@'
+#define START 'A'
+#define GOAL 'Z'
+#define HAVE_PATH 0x123f
+#define NO_PATH 0xf321
 
 struct Node
 {
@@ -28,7 +32,7 @@ struct Node
     Key priority;
     Node()
     {
-        x = y;
+        x = y = -1;
         priority = m_p(0, 0);
     }
     Node(int x, int y) : x(x), y(y)
@@ -58,10 +62,6 @@ struct Node
         if (priority.first == g.priority.first and priority.second == g.priority.second)
             return false;
         return true;
-    }
-    void print_position()
-    {
-        std::cout << "(" << x << "," << y << ")" << std::endl;
     }
 };
 #endif
