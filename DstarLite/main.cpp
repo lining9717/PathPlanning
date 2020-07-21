@@ -3,7 +3,7 @@
 int main(int argc, char const *argv[])
 {
     DStarLite dsl;
-    if (!dsl.init("./map1.txt", 4))
+    if (!dsl.init("/home/ln/WorkSpace/c++/pathplanning/DstarLite/map_extend.txt", 2))
         return 0;
 
     std::vector<Node> path;
@@ -19,6 +19,7 @@ int main(int argc, char const *argv[])
                 std::cout << "->";
         }
         std::cout << "=Goal]" << std::endl;
+        std::cout<<"length:"<<length<<std::endl;
     }
     else
         std::cout << "No Path!" << std::endl;

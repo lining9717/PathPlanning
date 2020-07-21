@@ -6,7 +6,7 @@
 #include "squaregrid.h"
 #include "priorityqueue.h"
 
-#define IS_PRINT_CONSTRUCTING_PROCESS 1
+#define IS_PRINT_CONSTRUCTING_PROCESS 0
 
 class DStarLite
 {

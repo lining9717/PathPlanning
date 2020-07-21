@@ -218,11 +218,11 @@ void I_ARAStar::Step3()
     }
     UpdateFvalues(INCONS);
     OPEN.insert(INCONS.begin(), INCONS.end());
-    for (auto i : CLOSED)
-    {
-        closes << i.id << ' ';
-    }
-    closes << std::endl;
+    // for (auto i : CLOSED)
+    // {
+    //     closes << i.id << ' ';
+    // }
+    // closes << std::endl;
     CLOSED.clear();
     INCONS.clear();
     DELETED.clear();
@@ -245,12 +245,12 @@ void I_ARAStar::GetCurentPath()
 {
     path.clear();
     int current = goal;
-    paths << current << ' ';
+    // paths << current << ' ';
 
     while (current != start)
     {
         current = parents[current];
-        paths << current << ' ';
+        // paths << current << ' ';
         path.push_back(current);
     }
     path_len = path.size();
@@ -310,7 +310,7 @@ void I_ARAStar::StartIAra()
     while (start != goal)
     {
         time_cur = clock();
-        logging << start << ' ' << goal << std::endl;
+        // logging << start << ' ' << goal << std::endl;
 
         if (ComputePath() == false)
         {
@@ -320,7 +320,7 @@ void I_ARAStar::StartIAra()
 
         //获取找到的路径
         GetCurentPath();
-        paths << std::endl;
+        // paths << std::endl;
         std::cout << "Find path[start:(" << start % m << "," << start / m << "), goal:("
                   << goal % m << "," << goal / m << ")]" << std::endl;
         last_start = start;
@@ -337,18 +337,18 @@ void I_ARAStar::StartIAra()
         Step2();
         Step3();
         Step4();
-        for (auto i : OPEN)
-        {
-            opens << i.id << ' ';
-        }
-        opens << std::endl;
+        // for (auto i : OPEN)
+        // {
+        //     opens << i.id << ' ';
+        // }
+        // opens << std::endl;
 
         times.push_back(clock() - time_cur);
     }
-    opens << std::endl;
-    logging << start << ' ' << goal << std::endl;
-    closes << std::endl;
-    paths << std::endl;
+    // opens << std::endl;
+    // logging << start << ' ' << goal << std::endl;
+    // closes << std::endl;
+    // paths << std::endl;
     std::cout << "Number of search:" << times.size() << std::endl;
     std::cout << "Spend time:" << (double)sum(times) / 1000 << "ms" << std::endl;
 }
@@ -357,11 +357,11 @@ int main(int argc, char const *argv[])
 {
     I_ARAStar *i_ara_star = new I_ARAStar();
     i_ara_star->GetGraphFromTXT("./map.txt");
-    i_ara_star->OpenLogTXT("./log.txt");
-    i_ara_star->OpenPathsTXT("./paths.txt");
-    i_ara_star->OpenOpensTXT("./opens.txt");
-    i_ara_star->OpenCloseTXT("./closes.txt");
-    i_ara_star->OpenInconsesTXT("./inconses.txt");
+    // i_ara_star->OpenLogTXT("./log.txt");
+    // i_ara_star->OpenPathsTXT("./paths.txt");
+    // i_ara_star->OpenOpensTXT("./opens.txt");
+    // i_ara_star->OpenCloseTXT("./closes.txt");
+    // i_ara_star->OpenInconsesTXT("./inconses.txt");
 
     i_ara_star->StartIAra();
 

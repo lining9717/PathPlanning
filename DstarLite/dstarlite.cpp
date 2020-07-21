@@ -214,6 +214,8 @@ int DStarLite::compute_shortest_path()
     std::vector<Node> neighs;
     while (is_key1_lowerthan_key2(frontier.first_key(), calculate_key(position)) or g(position) != rhs(position))
     {
+        if (frontier.size() == 0)
+            return NO_PATH;
         Key k_old = frontier.first_key();
         Node node = frontier.pop();
         last_nodes.push_back(node);
@@ -244,16 +246,14 @@ int DStarLite::compute_shortest_path()
             neighs.clear();
             neighs.shrink_to_fit();
         }
-        if (frontier.size() == 0)
-            return NO_PATH;
     }
     return HAVE_PATH;
 }
 
 int DStarLite::move_to_goal(std::vector<Node> &path)
 {
-    std::cout << "The real graph (A=Start, Z=Goal):" << std::endl;
-    draw_map(real_grid);
+    // std::cout << "The real graph (A=Start, Z=Goal):" << std::endl;
+    // draw_map(real_grid);
     std::vector<std::pair<Node, char>> observation;
     real_grid.observe(position, view_range, observation);
     std::vector<Node> walls;
@@ -277,7 +277,7 @@ int DStarLite::move_to_goal(std::vector<Node> &path)
         }
         if (g(position) == INFI)
         {
-            std::cout << "No Path!" << std::endl;
+            std::cout << "No Path!!!" << std::endl;
             return NO_PATH;
         }
         position = lowest_cost_neighbour(position);
@@ -306,10 +306,35 @@ int DStarLite::move_to_goal(std::vector<Node> &path)
         path.push_back(position);
         std::vector<Node>().swap(new_walls);
     }
-    std::cout << "******************************************************" << std::endl;
-    std::cout << "Final Path, taken (@ symbols):" << std::endl;
-    draw_map(real_grid, path);
+    // std::cout << "******************************************************" << std::endl;
+    // std::cout << "Final Path, taken (@ symbols):" << std::endl;
+    // draw_map(real_grid, path);
     return HAVE_PATH;
 }
 
+int main(int argc, char const *argv[])
+{
+    DStarLite dsl;
+    if (!dsl.init("/home/ln/WorkSpace/c++/pathplanning/DstarLite/map_extend.txt", 2))
+        return 0;
 
+    std::vector<Node> path;
+    int status = dsl.move_to_goal(path);
+    if (status == HAVE_PATH)
+    {
+        std::cout << "Final Path:[Start=";
+        int length = path.size();
+        for (int i = 0; i < length; i++)
+        {
+            std::cout << "(" << path[i].x << "," << path[i].y << ")";
+            if (i + 1 != length)
+                std::cout << "->";
+        }
+        std::cout << "=Goal]" << std::endl;
+        std::cout<<"length:"<<length<<std::endl;
+    }
+    else
+        std::cout << "No Path!" << std::endl;
+
+    return 0;
+}

@@ -1,13 +1,15 @@
-#include <cstring>
+
 #include <fstream>
 #include <iostream>
-#include <math.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
 #include <thread>
 #include <vector>
+#include <memory>
 
 #define MAXMAP 1000
 #define EMPTY -1
+const std::string txt_path = "/home/ln/WorkSpace/c++/pathplanning/map_generator/map.txt";
 
 class Node
 {
@@ -48,7 +50,7 @@ public:
      * @param rx [output] x positions list of the final path
      * @param ry [output] y positions list of the final path
      */
-    void planning(float sx, float sy, float gx, float gy, std::vector<float> &rx, std::vector<float> &ry)
+    bool planning(float sx, float sy, float gx, float gy, std::vector<float> &rx, std::vector<float> &ry)
     {
         Node nstart(calc_xyindex(sx, minx), calc_xyindex(sy, miny), 0.0, -1);
         Node ngoal(calc_xyindex(gx, minx), calc_xyindex(gy, miny), 0.0, -1);
@@ -71,21 +73,21 @@ public:
             int c_id = getMinCostInMap(openset_id, openset_node, ngoal);
             if (c_id == EMPTY)
             {
-                std::cout << "Empty in openset" << std::endl;
-                return;
+                // std::cout << "Empty in openset" << std::endl;
+                return false;
             }
             //get the min cost node's index
             int c_index = getIdInVector(c_id, openset_id);
             if (c_index == -1)
             {
-                std::cout << "Error openset_id" << std::endl;
-                return;
+                // std::cout << "Error openset_id" << std::endl;
+                return false;
             }
             Node current = openset_node[c_index]; //min cost node in openset
 
             if (current.x == ngoal.x && current.y == ngoal.y)
             {
-                std::cout << "Find goal!" << std::endl;
+                // std::cout << "Find goal!" << std::endl;
                 ngoal.pind = current.pind;
                 ngoal.cost = current.cost;
                 break;
@@ -126,7 +128,8 @@ public:
             }
         }
         calc_finalpath(ngoal, closeset_id, closeset_node, rx, ry);
-        print_map(rx, ry);
+        return true;
+        // print_map(rx, ry);
     }
 
 private:
@@ -147,14 +150,18 @@ private:
     int minx, miny, maxx, maxy;
     int xwidth, ywidth;
     int map[MAXMAP][MAXMAP];
-    float motion[8][3] = {{1.0, 0.0, 1.0},
+    // float motion[8][3] = {{1.0, 0.0, 1.0},
+    //                       {0.0, 1.0, 1.0},
+    //                       {-1.0, 0.0, 1.0},
+    //                       {0.0, -1.0, 1.0},
+    //                       {-1.0, -1.0, sqrt(2)},
+    //                       {-1.0, 1.0, sqrt(2)},
+    //                       {1.0, -1.0, sqrt(2)},
+    //                       {1.0, 1.0, sqrt(2)}};
+    float motion[4][3] = {{1.0, 0.0, 1.0},
                           {0.0, 1.0, 1.0},
                           {-1.0, 0.0, 1.0},
-                          {0.0, -1.0, 1.0},
-                          {-1.0, -1.0, sqrt(2)},
-                          {-1.0, 1.0, sqrt(2)},
-                          {1.0, -1.0, sqrt(2)},
-                          {1.0, 1.0, sqrt(2)}};
+                          {0.0, -1.0, 1.0}};
 
     /**
      * @brief 
@@ -182,7 +189,7 @@ private:
             cost += n.cost;
             pind = n.pind;
         }
-        std::cout << "Cost:" << (double)cost << std::endl;
+        // std::cout << "Cost:" << (double)cost << std::endl;
     }
 
     /**
@@ -239,8 +246,8 @@ private:
         }
         read.close();
 
-        std::cout << "col count:" << colcount / rowcount << std::endl;
-        std::cout << "row count:" << rowcount << std::endl;
+        // std::cout << "col count:" << colcount / rowcount << std::endl;
+        // std::cout << "row count:" << rowcount << std::endl;
         ywidth = rowcount;
         xwidth = colcount / rowcount;
         minx = 0;
@@ -425,27 +432,90 @@ private:
     }
 };
 
-int main(int argc, char const *argv[])
+#ifdef __cplusplus
+extern "C"
 {
-    std::string txt_path = "/home/ln/WorkSpace/c++/pathplanning/map_generator/map1.txt";
-    float sx = 2.0;
-    float sy = 2.0;
-    float gx = 50.0;
-    float gy = 50.0;
-
-    float grid_size = 1.0;
-    float robot_radius = 1.0;
-
-    std::vector<float> rx, ry;
-
-    AStar astar(txt_path, grid_size, robot_radius);
-    astar.planning(sx, sy, gx, gy, rx, ry);
-
-    for (size_t i = 0; i < rx.size(); i++)
+    int getpath(int *data, int x1, int y1, int x2, int y2)
     {
-        std::cout << "(" << rx[i] << "," << ry[i] << ")"
-                  << "<---";
+        float sx = float(x1);
+        float sy = float(y1);
+        float gx = float(x2);
+        float gy = float(y2);
+
+        float grid_size = 1.0;
+        float robot_radius = 1.0;
+
+        std::vector<float> rx, ry;
+
+        std::shared_ptr<AStar> astar(new AStar(txt_path, grid_size, robot_radius));
+        bool r = astar->planning(sx, sy, gx, gy, rx, ry);
+        if (r)
+        {
+            int size = rx.size();
+            int res[2 * size] = {-1};
+            int j = size - 1;
+            for (auto i = 0; i < 2 * size; i += 2)
+            {
+                res[i] = int(rx[j]);
+                res[i + 1] = int(ry[j]);
+                j--;
+            }
+            std::memcpy(data, res, sizeof(res));
+            return size * 2;
+        }
+        else
+        {
+            return -1;
+        }
     }
-    std::cout << "Go!" << std::endl;
-    return 0;
+
+    int distance(int x1, int y1, int x2, int y2)
+    {
+        float sx = float(x1);
+        float sy = float(y1);
+        float gx = float(x2);
+        float gy = float(y2);
+
+        float grid_size = 1.0;
+        float robot_radius = 1.0;
+
+        std::vector<float> rx, ry;
+
+        std::shared_ptr<AStar> astar(new AStar(txt_path, grid_size, robot_radius));
+        bool res = astar->planning(sx, sy, gx, gy, rx, ry);
+        if (res)
+        {
+            int size = rx.size();
+            return size;
+        }
+        else
+        {
+            return -1;
+        }
+    }
 }
+#endif
+// int main(int argc, char const *argv[])
+// {
+//     std::string txt_path = "/home/ln/WorkSpace/c++/pathplanning/map_generator/map.txt";
+//     float sx = 0.0;
+//     float sy = 0.0;
+//     float gx = 41.0;
+//     float gy = 11.0;
+
+//     float grid_size = 1.0;
+//     float robot_radius = 1.0;
+
+//     std::vector<float> rx, ry;
+
+//     AStar astar(txt_path, grid_size, robot_radius);
+//     astar.planning(sx, sy, gx, gy, rx, ry);
+//     std::cout << "length:" << rx.size() << std::endl;
+//     for (size_t i = 0; i < rx.size(); i++)
+//     {
+//         std::cout << "(" << rx[i] << "," << ry[i] << ")"
+//                   << "<---";
+//     }
+//     std::cout << "Go!" << std::endl;
+//     return 0;
+// }
